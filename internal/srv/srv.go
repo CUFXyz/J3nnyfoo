@@ -2,7 +2,6 @@ package srv
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -13,33 +12,41 @@ type jsonPlaceholder struct {
 	Owner string  `json:"owner"`
 }
 
-func index(r http.ResponseWriter, req *http.Request) {
-	placeholder1 := jsonPlaceholder{
-		Price: 30,
-		Type:  "Boots",
-		Owner: "Nike",
+var placeholder1 = jsonPlaceholder{
+	Price: 30,
+	Type:  "Boots",
+	Owner: "Nike",
+}
+
+var placeholders = []jsonPlaceholder{placeholder1}
+
+func sent(r http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodPost {
+		var data jsonPlaceholder
+		decoder := json.NewDecoder(req.Body)
+		if err := decoder.Decode(&data); err != nil {
+			log.Fatalf("%v", err)
+		}
+		placeholders = append(placeholders, data)
 	}
+}
+
+func index(r http.ResponseWriter, req *http.Request) {
+
 	if req.Method == http.MethodGet {
-		if body, err := json.Marshal(placeholder1); err != nil {
+		if body, err := json.Marshal(placeholders); err != nil {
 			log.Fatalf("%v", err)
 		} else {
 			r.Header().Set("Content-Type", "application/json")
 			r.Write(body)
 		}
-	} else if req.Method == http.MethodPost {
-		decoder := json.NewDecoder(req.Body)
-		var test jsonPlaceholder
-		if err := decoder.Decode(&test); err != nil {
-			log.Fatalf("%v", err)
-		}
-		fmt.Println(test)
 	}
-
 }
 
 func DefaultSetupServer(mux *http.ServeMux) *http.Server {
 
 	mux.HandleFunc("/", index)
+	mux.HandleFunc("/sent", sent)
 
 	return &http.Server{
 		Handler: mux,
