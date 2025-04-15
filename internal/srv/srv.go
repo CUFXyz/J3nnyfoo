@@ -2,13 +2,14 @@ package srv
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	database "jennyfood/internal/db"
 	"log"
 	"net/http"
 )
 
 type jsonPlaceholder struct {
-	Id    int     `json:"id"`
 	Name  string  `json:"name"`
 	Price float32 `json:"price"`
 	Type  string  `json:"type"`
@@ -16,25 +17,29 @@ type jsonPlaceholder struct {
 }
 
 var placeholder1 = jsonPlaceholder{
-	Id:    1,
 	Name:  "AirMax",
 	Price: 30,
 	Type:  "Boots",
 	Owner: "Nike",
 }
 
+const connectString = "host=localhost port=5454 dbname=postgres user=postgres password=Verynice1qwe sslmode=disable"
+
 var placeholders = []jsonPlaceholder{placeholder1}
 
-func deleteByID(r http.ResponseWriter, req *http.Request) {
-	var data jsonPlaceholder
+func dbStatus(r http.ResponseWriter, req *http.Request) {
 	switch req.Method {
-	case http.MethodPost:
-		bytes, err := io.ReadAll(req.Body)
+	case http.MethodGet:
+
+		db, err := database.ConnectToPGSQL(connectString)
 		if err != nil {
-			log.Fatalf("%v", err)
+			fmt.Printf("%v", err)
+			r.Write([]byte(fmt.Sprintf("%v", err)))
+			db.Close()
+		} else {
+			r.Write([]byte("STATUS: OK"))
+			db.Close()
 		}
-		json.Unmarshal(bytes, &data)
-		placeholders = removebyField(placeholders, data.Id)
 	default:
 		r.WriteHeader(http.StatusBadRequest)
 		r.Write([]byte("Unsupported request method"))
@@ -57,14 +62,30 @@ func sent(r http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func DBsent(r http.ResponseWriter, req *http.Request) {
+	//var data jsonPlaceholder
+	switch req.Method {
+	case http.MethodPost:
+		bytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		database.SentPGSQL(connectString, bytes)
+
+	default:
+		r.WriteHeader(http.StatusBadRequest)
+		r.Write([]byte("Unsupported request method"))
+	}
+}
+
 func index(r http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
-		if body, err := json.Marshal(placeholders); err != nil {
-			log.Fatalf("%v", err)
+		if data, err := database.GetFromPGSQL(connectString); err != nil {
+			panic(err)
 		} else {
 			r.Header().Set("Content-Type", "application/json")
-			r.Write(body)
+			r.Write(data)
 		}
 	default:
 		r.WriteHeader(http.StatusBadRequest)
@@ -76,7 +97,8 @@ func DefaultSetupServer(mux *http.ServeMux) *http.Server {
 
 	mux.HandleFunc("/", index)
 	mux.HandleFunc("/sent", sent)
-	mux.HandleFunc("/delete", deleteByID)
+	mux.HandleFunc("/dbsent", DBsent)
+	mux.HandleFunc("/dbstatus", dbStatus)
 
 	return &http.Server{
 		Handler: mux,
