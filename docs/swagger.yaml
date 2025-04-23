@@ -1,3 +1,20 @@
+definitions:
+  database.JsonPlaceholder:
+    properties:
+      name:
+        type: string
+      owner:
+        type: string
+      price:
+        type: number
+      type:
+        type: string
+    type: object
+  srv.Status:
+    properties:
+      pg_status:
+        type: string
+    type: object
 host: localhost:9090
 info:
   contact: {}
@@ -26,37 +43,27 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/srv.Status'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/srv.Status'
         "404":
           description: Not Found
       summary: Status of PostgreSQL
-  /sent:
+  /send:
     post:
       consumes:
       - application/json
       description: Sending JSON to service and saving in PostgreSQL
       parameters:
-      - description: name of the product
+      - description: Actual data to store in db
         in: body
         name: name
+        required: true
         schema:
-          type: string
-      - description: price of the product
-        in: body
-        name: price
-        schema:
-          type: number
-      - description: type of the product
-        in: body
-        name: type
-        schema:
-          type: string
-      - description: brand or name
-        in: body
-        name: owner
-        schema:
-          type: string
+          $ref: '#/definitions/database.JsonPlaceholder'
       responses:
         "200":
           description: OK

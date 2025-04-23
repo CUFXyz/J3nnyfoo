@@ -9,32 +9,35 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type jsonPlaceholder struct {
+type JsonPlaceholder struct {
 	Name  string  `json:"name"`
 	Price float32 `json:"price"`
 	Type  string  `json:"type"`
 	Owner string  `json:"owner"`
 }
 
-func ConnectToPGSQL(connectionSTR string) (*sqlx.DB, error) {
+func ConnectToPGSQL(connectionSTR string) error {
 	db, err := sqlx.Connect("postgres", connectionSTR)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to db: %w", err)
+		return fmt.Errorf("failed to connect to db: %w", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("failed to ping db: %w", err)
+		return fmt.Errorf("failed to ping db: %w", err)
 	}
 
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 
-	return db, nil
+	// No need for passing db instance anywhere else.
+	// Just close it here.
+	defer db.Close()
+	return nil
 }
 
 func SentPGSQL(connectionSTR string, data []byte) {
-	var jdata jsonPlaceholder
+	var jdata JsonPlaceholder
 	json.Unmarshal(data, &jdata)
 	db, err := sql.Open("postgres", connectionSTR)
 	if err != nil {
@@ -56,7 +59,7 @@ func GetFromPGSQL(connectionSTR string) ([]byte, error) {
 		fmt.Printf("Error: %v", err)
 	}
 
-	var items, item = []jsonPlaceholder{}, jsonPlaceholder{}
+	items, item := []JsonPlaceholder{}, JsonPlaceholder{}
 	count, _ := getRows(db)
 	for i := 0; i < count; i++ {
 		err = db.QueryRow("SELECT name, price, type, owner FROM data WHERE id = $1", i+1).Scan(&item.Name, &item.Price, &item.Type, &item.Owner)

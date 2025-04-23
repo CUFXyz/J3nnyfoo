@@ -2,52 +2,61 @@ package srv
 
 import (
 	"io"
-	_ "jennyfood/docs"
-	database "jennyfood/internal/db"
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	_ "jennyfood/docs"
+
+	database "jennyfood/internal/db"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"github.com/gin-gonic/gin"
 )
 
 const connectString = "" // Gonna be deleted soon
 
 type Status struct {
-	Status string `json:"PGstatus"`
+	Status string `json:"pg_status"`
 }
 
 // @Summary		Status of PostgreSQL
 // @Description	Returns status of PostgreSQL in json
 // @Produce		json
-// @Success		200
-// @Failure		400
+// @Success		200 {object} Status
+// @Failure		400 {object} Status
 // @Failure		404
 // @Router			/dbstatus [get]
 func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
 	var dbStatus Status
-	if db, err := database.ConnectToPGSQL(connectString); err != nil {
+
+	switch database.ConnectToPGSQL(connectString) {
+	case nil:
 		dbStatus.Status = "DOWN"
-		c.JSON(http.StatusNotFound, dbStatus)
-		defer db.Close()
+		c.JSON(
+			http.StatusNotFound,
+			dbStatus,
+		)
+		return
+	default:
+		dbStatus.Status = "UP"
+		c.JSON(
+			http.StatusOK,
+			dbStatus,
+		)
 	}
-	dbStatus.Status = "UP"
-	c.JSON(http.StatusOK, dbStatus)
 }
 
 // @Summary		Sending data to PostgreSQL
 // @Description	Sending JSON to service and saving in PostgreSQL
 // @Accept			json
-// @Param			name body string false "name of the product"
-// @Param			price body number false "price of the product"
-// @Param			type body string false "type of the product"
-// @Param			owner body string false "brand or name"
+// @Param			name body database.JsonPlaceholder true "Actual data to store in db"
 // @Success		200
 // @Failure		400
 // @Failure		404
-// @Router			/sent [post]
-func sent(c *gin.Context) {
+// @Router			/send [post]
+func send(c *gin.Context) {
 	bytes, err := io.ReadAll(c.Request.Body) // Writing the body of request
 	if err != nil {
 		log.Fatalf("%v", err) // Server killing itself after that error
@@ -68,12 +77,18 @@ func index(c *gin.Context) {
 	}
 }
 
-func RunGinServer(engine *gin.Engine) {
+func RunGinServer(engine *gin.Engine) error {
+	engine.GET(
+		"/swagger/*any",
+		ginSwagger.WrapHandler(
+			swaggerFiles.Handler,
+			ginSwagger.URL(
+				"http://localhost:9090/swagger/doc.json"),
+		),
+	)
 
-	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("http://localhost:9090/swagger/doc.json")))
-
-	engine.POST("/sent", sent)
+	engine.POST("/send", send)
 	engine.GET("/dbstatus", dbStatus)
 	engine.GET("/data", index)
-	engine.Run(":9090")
+	return engine.Run(":9090")
 }
