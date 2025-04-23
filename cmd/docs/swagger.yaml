@@ -1,0 +1,8 @@
+host: localhost:9090
+info:
+  contact: {}
+  description: Small project what accepts jsons and storing it in the postgreSQL
+  title: J3nnyFoo JSON Project
+  version: "0.1"
+paths: {}
+swagger: "2.0"

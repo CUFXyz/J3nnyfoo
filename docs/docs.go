@@ -44,10 +44,16 @@ const docTemplate = `{
                 "summary": "Status of PostgreSQL",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/srv.Status"
+                        }
                     },
                     "400": {
-                        "description": "Bad Request"
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/srv.Status"
+                        }
                     },
                     "404": {
                         "description": "Not Found"
@@ -55,7 +61,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/sent": {
+        "/send": {
             "post": {
                 "description": "Sending JSON to service and saving in PostgreSQL",
                 "consumes": [
@@ -64,35 +70,12 @@ const docTemplate = `{
                 "summary": "Sending data to PostgreSQL",
                 "parameters": [
                     {
-                        "description": "name of the product",
+                        "description": "Actual data to store in db",
                         "name": "name",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "price of the product",
-                        "name": "price",
-                        "in": "body",
-                        "schema": {
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "description": "type of the product",
-                        "name": "type",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "brand or name",
-                        "name": "owner",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/database.JsonPlaceholder"
                         }
                     }
                 ],
@@ -106,6 +89,33 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "database.JsonPlaceholder": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "srv.Status": {
+            "type": "object",
+            "properties": {
+                "pg_status": {
+                    "type": "string"
                 }
             }
         }
