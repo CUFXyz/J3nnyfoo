@@ -1,0 +1,106 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Small project what accepts jsons and storing it in the postgreSQL",
+        "title": "J3nnyFoo JSON Project",
+        "contact": {},
+        "version": "0.1"
+    },
+    "host": "localhost:9090",
+    "paths": {
+        "/data": {
+            "get": {
+                "description": "Returns an array of JSONS with data",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Returns whole data what stored in PostgreSQL",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/dbstatus": {
+            "get": {
+                "description": "Returns status of PostgreSQL in json",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Status of PostgreSQL",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/sent": {
+            "post": {
+                "description": "Sending JSON to service and saving in PostgreSQL",
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Sending data to PostgreSQL",
+                "parameters": [
+                    {
+                        "description": "name of the product",
+                        "name": "name",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "price of the product",
+                        "name": "price",
+                        "in": "body",
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "type of the product",
+                        "name": "type",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "brand or name",
+                        "name": "owner",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        }
+    }
+}

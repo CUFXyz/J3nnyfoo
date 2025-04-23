@@ -1,0 +1,68 @@
+host: localhost:9090
+info:
+  contact: {}
+  description: Small project what accepts jsons and storing it in the postgreSQL
+  title: J3nnyFoo JSON Project
+  version: "0.1"
+paths:
+  /data:
+    get:
+      description: Returns an array of JSONS with data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Returns whole data what stored in PostgreSQL
+  /dbstatus:
+    get:
+      description: Returns status of PostgreSQL in json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Status of PostgreSQL
+  /sent:
+    post:
+      consumes:
+      - application/json
+      description: Sending JSON to service and saving in PostgreSQL
+      parameters:
+      - description: name of the product
+        in: body
+        name: name
+        schema:
+          type: string
+      - description: price of the product
+        in: body
+        name: price
+        schema:
+          type: number
+      - description: type of the product
+        in: body
+        name: type
+        schema:
+          type: string
+      - description: brand or name
+        in: body
+        name: owner
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Sending data to PostgreSQL
+swagger: "2.0"

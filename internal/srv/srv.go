@@ -1,111 +1,79 @@
 package srv
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
+	_ "jennyfood/docs"
 	database "jennyfood/internal/db"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-type jsonPlaceholder struct {
-	Name  string  `json:"name"`
-	Price float32 `json:"price"`
-	Type  string  `json:"type"`
-	Owner string  `json:"owner"`
+const connectString = "" // Gonna be deleted soon
+
+type Status struct {
+	Status string `json:"PGstatus"`
 }
 
-var placeholder1 = jsonPlaceholder{
-	Name:  "AirMax",
-	Price: 30,
-	Type:  "Boots",
-	Owner: "Nike",
+// @Summary		Status of PostgreSQL
+// @Description	Returns status of PostgreSQL in json
+// @Produce		json
+// @Success		200
+// @Failure		400
+// @Failure		404
+// @Router			/dbstatus [get]
+func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
+	var dbStatus Status
+	if db, err := database.ConnectToPGSQL(connectString); err != nil {
+		dbStatus.Status = "DOWN"
+		c.JSON(http.StatusNotFound, dbStatus)
+		defer db.Close()
+	}
+	dbStatus.Status = "UP"
+	c.JSON(http.StatusOK, dbStatus)
 }
 
-const connectString = "host=localhost port=5454 dbname=postgres user=postgres password=Verynice1qwe sslmode=disable"
+// @Summary		Sending data to PostgreSQL
+// @Description	Sending JSON to service and saving in PostgreSQL
+// @Accept			json
+// @Param			name body string false "name of the product"
+// @Param			price body number false "price of the product"
+// @Param			type body string false "type of the product"
+// @Param			owner body string false "brand or name"
+// @Success		200
+// @Failure		400
+// @Failure		404
+// @Router			/sent [post]
+func sent(c *gin.Context) {
+	bytes, err := io.ReadAll(c.Request.Body) // Writing the body of request
+	if err != nil {
+		log.Fatalf("%v", err) // Server killing itself after that error
+	}
+	database.SentPGSQL(connectString, bytes)
+}
 
-var placeholders = []jsonPlaceholder{placeholder1}
-
-func dbStatus(r http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case http.MethodGet:
-
-		db, err := database.ConnectToPGSQL(connectString)
-		if err != nil {
-			fmt.Printf("%v", err)
-			r.Write([]byte(fmt.Sprintf("%v", err)))
-			db.Close()
-		} else {
-			r.Write([]byte("STATUS: OK"))
-			db.Close()
-		}
-	default:
-		r.WriteHeader(http.StatusBadRequest)
-		r.Write([]byte("Unsupported request method"))
+// @Summary		Returns whole data what stored in PostgreSQL
+// @Description	Returns an array of JSONS with data
+// @Produce		json
+// @Success		200
+// @Failure		400
+// @Failure		404
+// @Router			/data [get]
+func index(c *gin.Context) {
+	if data, err := database.GetFromPGSQL(connectString); err == nil { // Getting info from PG
+		c.Data(http.StatusOK, "application/json", data)
 	}
 }
 
-func sent(r http.ResponseWriter, req *http.Request) {
-	var data jsonPlaceholder
-	switch req.Method {
-	case http.MethodPost:
-		bytes, err := io.ReadAll(req.Body)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		json.Unmarshal(bytes, &data)
-		placeholders = append(placeholders, data)
-	default:
-		r.WriteHeader(http.StatusBadRequest)
-		r.Write([]byte("Unsupported request method"))
-	}
-}
+func RunGinServer(engine *gin.Engine) {
 
-func DBsent(r http.ResponseWriter, req *http.Request) {
-	//var data jsonPlaceholder
-	switch req.Method {
-	case http.MethodPost:
-		bytes, err := io.ReadAll(req.Body)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-		database.SentPGSQL(connectString, bytes)
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("http://localhost:9090/swagger/doc.json")))
 
-	default:
-		r.WriteHeader(http.StatusBadRequest)
-		r.Write([]byte("Unsupported request method"))
-	}
-}
-
-func index(r http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case http.MethodGet:
-		if data, err := database.GetFromPGSQL(connectString); err != nil {
-			panic(err)
-		} else {
-			r.Header().Set("Content-Type", "application/json")
-			r.Write(data)
-		}
-	default:
-		r.WriteHeader(http.StatusBadRequest)
-		r.Write([]byte("Unsupported request method"))
-	}
-}
-
-func DefaultSetupServer(mux *http.ServeMux) *http.Server {
-
-	mux.HandleFunc("/", index)
-	mux.HandleFunc("/sent", sent)
-	mux.HandleFunc("/dbsent", DBsent)
-	mux.HandleFunc("/dbstatus", dbStatus)
-
-	return &http.Server{
-		Handler: mux,
-		Addr:    ":9090",
-	}
-}
-
-func RunServer(srv *http.Server) {
-	http.ListenAndServe(srv.Addr, srv.Handler)
+	engine.POST("/sent", sent)
+	engine.GET("/dbstatus", dbStatus)
+	engine.GET("/data", index)
+	engine.Run(":9090")
 }
