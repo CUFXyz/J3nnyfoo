@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const connectString = "" // Gonna be deleted soon
+const connectString = "host=localhost port=5454 dbname=postgres user=postgres password=Verynice1qwe sslmode=disable" // Gonna be deleted soon
 
 type Status struct {
 	Status string `json:"pg_status"`
@@ -33,16 +33,16 @@ func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
 
 	switch database.ConnectToPGSQL(connectString) {
 	case nil:
-		dbStatus.Status = "DOWN"
+		dbStatus.Status = "UP"
 		c.JSON(
-			http.StatusNotFound,
+			http.StatusOK,
 			dbStatus,
 		)
 		return
 	default:
-		dbStatus.Status = "UP"
+		dbStatus.Status = "DOWN"
 		c.JSON(
-			http.StatusOK,
+			http.StatusNotFound,
 			dbStatus,
 		)
 	}
@@ -86,7 +86,6 @@ func RunGinServer(engine *gin.Engine) error {
 				"http://localhost:9090/swagger/doc.json"),
 		),
 	)
-
 	engine.POST("/send", send)
 	engine.GET("/dbstatus", dbStatus)
 	engine.GET("/data", index)

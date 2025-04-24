@@ -56,34 +56,28 @@ func GetFromPGSQL(connectionSTR string) ([]byte, error) {
 	var data []byte
 	db, err := sql.Open("postgres", connectionSTR)
 	if err != nil {
-		fmt.Printf("Error: %v", err)
+		return nil, fmt.Errorf("error: %v", err)
 	}
 
 	items, item := []JsonPlaceholder{}, JsonPlaceholder{}
-	count, _ := getRows(db)
-	for i := 0; i < count; i++ {
-		err = db.QueryRow("SELECT name, price, type, owner FROM data WHERE id = $1", i+1).Scan(&item.Name, &item.Price, &item.Type, &item.Owner)
+	rows, err := db.Query("SELECT name, price, type, owner FROM data")
+	if err != nil {
+		return nil, fmt.Errorf("ERROR: %w", err)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&item.Name, &item.Price, &item.Type, &item.Owner)
 		if err != nil {
-			fmt.Printf("ERROR: %v", err)
+			fmt.Printf("ERROR ROWS: %v", err)
+			continue
 		}
 		items = append(items, item)
 	}
+	defer rows.Close()
 	data, err = json.Marshal(items)
 	if err != nil {
-		fmt.Printf("ERROR: %v", err)
+		return nil, fmt.Errorf("ERROR: %w", err)
 	}
 	db.Close()
 	return data, nil
-}
-
-func getRows(db *sql.DB) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM data").Scan(&count)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return count, nil
 }
