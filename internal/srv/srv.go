@@ -1,46 +1,76 @@
 package srv
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	_ "jennyfood/docs"
+	"jennyfood/models"
 
+	"jennyfood/internal/auth"
 	database "jennyfood/internal/db"
 
+	"github.com/google/uuid"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
 )
 
-const connectString = "host=localhost port=5454 dbname=postgres user=postgres password=Verynice1qwe sslmode=disable" // Gonna be deleted soon
-
-type Status struct {
-	Status string `json:"pg_status"`
+// @Summary Registrate user to get new features
+// @Accept json
+// @Param name body models.RegisterData true "Register user in this service"
+// @Success 200
+// @Failure 400
+// @Failure 404
+// @Router /register [post]
+func RegisterUser(c *gin.Context) {
+	var user models.RegisterData
+	var userd models.User
+	bytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(
+			http.StatusBadGateway,
+			"Error to read your request",
+		)
+	}
+	json.Unmarshal(bytes, &user)
+	userd.Uid = uuid.New()
+	userd.Email = user.Email
+	userd.Password = string(auth.CryptPassword(user.Password))
+	userd.Role = "user"
+	userd.Token = auth.GenerateToken(userd.UserData)
+	RegDataToSend, err := json.Marshal(userd)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	database.SentPGSQL(os.Getenv("CONSTR"), RegDataToSend)
 }
 
 // @Summary		Status of PostgreSQL
 // @Description	Returns status of PostgreSQL in json
 // @Produce		json
-// @Success		200 {object} Status
-// @Failure		400 {object} Status
+// @Success		200 {object} models.Status
+// @Failure		400 {object} models.Status
 // @Failure		404
 // @Router			/dbstatus [get]
 func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
-	var dbStatus Status
+	var dbStatus models.Status
 
-	switch database.ConnectToPGSQL(connectString) {
+	switch database.ConnectToPGSQL(os.Getenv("CONSTR")) {
 	case nil:
-		dbStatus.Status = "UP"
+		dbStatus.CurStatus = "UP"
 		c.JSON(
 			http.StatusOK,
 			dbStatus,
 		)
 		return
 	default:
-		dbStatus.Status = "DOWN"
+		dbStatus.CurStatus = "DOWN"
 		c.JSON(
 			http.StatusNotFound,
 			dbStatus,
@@ -61,7 +91,7 @@ func send(c *gin.Context) {
 	if err != nil {
 		log.Fatalf("%v", err) // Server killing itself after that error
 	}
-	database.SentPGSQL(connectString, bytes)
+	database.SentPGSQL(os.Getenv("CONSTR"), bytes)
 }
 
 // @Summary		Returns whole data what stored in PostgreSQL
@@ -72,7 +102,7 @@ func send(c *gin.Context) {
 // @Failure		404
 // @Router			/data [get]
 func index(c *gin.Context) {
-	if data, err := database.GetFromPGSQL(connectString); err == nil { // Getting info from PG
+	if data, err := database.GetFromPGSQL(os.Getenv("CONSTR")); err == nil { // Getting info from PG
 		c.Data(http.StatusOK, "application/json", data)
 	}
 }
@@ -86,6 +116,7 @@ func RunGinServer(engine *gin.Engine) error {
 				"http://localhost:9090/swagger/doc.json"),
 		),
 	)
+	engine.POST("/register", RegisterUser)
 	engine.POST("/send", send)
 	engine.GET("/dbstatus", dbStatus)
 	engine.GET("/data", index)

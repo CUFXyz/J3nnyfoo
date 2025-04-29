@@ -2,11 +2,16 @@ package main
 
 import (
 	_ "jennyfood/docs"
+	initProj "jennyfood/internal/init"
 	"jennyfood/internal/srv"
 	"log"
 
 	"github.com/gin-gonic/gin"
 )
+
+func init() {
+	initProj.LoadEnvVar()
+}
 
 // @title			J3nnyFoo JSON Project
 // @version		0.1
