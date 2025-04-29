@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"jennyfood/internal/auth"
+	"jennyfood/models"
 	"log"
 	"net/http"
 	"os"
 
 	_ "jennyfood/docs"
-	"jennyfood/models"
 
-	"jennyfood/internal/auth"
 	database "jennyfood/internal/db"
 
 	"github.com/google/uuid"
@@ -22,7 +22,14 @@ import (
 )
 
 func LoginUser(c *gin.Context) {
-	var logindata, dbinfo models.RegisterData
+	// Имхо так почище
+	// Лучше все переменные выносить в отдельный вот такой блок,
+	// чтобы его было проще читать и понимать
+	var (
+		logindata models.RegisterData
+		dbinfo    models.RegisterData
+	)
+
 	bytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(
@@ -42,6 +49,7 @@ func LoginUser(c *gin.Context) {
 		fmt.Printf("Error due getting user from db")
 		return
 	}
+
 	result, err := auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
 	if err != nil {
 		fmt.Printf("Error due auth user")
@@ -54,16 +62,15 @@ func LoginUser(c *gin.Context) {
 			"Email or Password is not correct",
 		)
 	}
-
 }
 
-// @Summary Registrate user to get new features
-// @Accept json
-// @Param name body models.RegisterData true "Register user in this service"
-// @Success 200
-// @Failure 400
-// @Failure 404
-// @Router /register [post]
+// @Summary	Register user to get new features
+// @Accept		json
+// @Param		name	body	models.RegisterData	true	"Register user in this service"
+// @Success	200
+// @Failure	400
+// @Failure	404
+// @Router		/register [post]
 func RegisterUser(c *gin.Context) {
 	var user models.RegisterData
 	var userd models.User
@@ -75,28 +82,34 @@ func RegisterUser(c *gin.Context) {
 		)
 	}
 	json.Unmarshal(bytes, &user)
+	// Вынеси весь этот блок в конструктор а-ля
+	// func NewUser(payload models.RegisterData) models.User {}
 	userd.Uid = uuid.New()
 	userd.Email = user.Email
 	userd.Password = string(auth.CryptPassword(user.Password))
 	userd.Role = "user"
 	userd.Token = ""
+	//
+
 	RegDataToSend, err := json.Marshal(userd)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
+	// Ну вот тут os.Getenv() точно делать не надо. Вынеси все это в конфиг какой-нибудь, как я описал в файле init
 	database.SendRegDataPGSQL(os.Getenv("CONSTR"), RegDataToSend)
 }
 
 // @Summary		Status of PostgreSQL
 // @Description	Returns status of PostgreSQL in json
 // @Produce		json
-// @Success		200 {object} models.Status
-// @Failure		400 {object} models.Status
+// @Success		200	{object}	models.Status
+// @Failure		400	{object}	models.Status
 // @Failure		404
 // @Router			/dbstatus [get]
 func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
 	var dbStatus models.Status
 
+	// Аналогично. Не дергай os.Getenv. Вынеси это в конфиг.
 	switch database.ConnectToPGSQL(os.Getenv("CONSTR")) {
 	case nil:
 		dbStatus.CurStatus = "UP"
@@ -117,7 +130,7 @@ func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
 // @Summary		Sending data to PostgreSQL
 // @Description	Sending JSON to service and saving in PostgreSQL
 // @Accept			json
-// @Param			name body models.JsonPlaceholder true "Actual data to store in db"
+// @Param			name	body	models.JsonPlaceholder	true	"Actual data to store in db"
 // @Success		200
 // @Failure		400
 // @Failure		404
