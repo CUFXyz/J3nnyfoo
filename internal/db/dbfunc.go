@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Вынеси экзмепляр db куда-нибудь и напиши для него оболочки, чтобы тебе не пришлось каждый раз делать sql.Open()
 func ConnectToPGSQL(connectionSTR string) error {
 	db, err := sqlx.Connect("postgres", connectionSTR)
 	if err != nil {
@@ -36,6 +37,7 @@ func SentProductPGSQL(connectionSTR string, data []byte) {
 	json.Unmarshal(data, &jdata)
 	db, err := sql.Open("postgres", connectionSTR)
 	if err != nil {
+		// ну ебаны рот error while бля
 		fmt.Printf("Error due opening postgres\n")
 	}
 
@@ -64,7 +66,6 @@ func SendRegDataPGSQL(connectionSTR string, data []byte) {
 		fmt.Printf("Can't get affected rows\n")
 	}
 	fmt.Printf("%v rows affected", rws)
-
 }
 
 func GetUserFromPGSQL(connectionSTR string, user models.RegisterData) (*models.RegisterData, error) {

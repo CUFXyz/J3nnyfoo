@@ -21,6 +21,7 @@ func AuthFunc(hashedPass []byte, origPass []byte) (bool, error) {
 func CryptPassword(password string) []byte {
 	cryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
+		// Error while*
 		fmt.Printf("Error due crypting password, returning noncrypted")
 		return []byte(password)
 	}
@@ -35,6 +36,7 @@ func GenerateToken(userdata models.UserData) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	signed, err := token.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
+		// Error while*
 		fmt.Printf("Error due signing string")
 		return ""
 	}

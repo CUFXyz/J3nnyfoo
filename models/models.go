@@ -2,6 +2,7 @@ package models
 
 import "github.com/google/uuid"
 
+// TODO: нормальный нейминг
 type JsonPlaceholder struct {
 	Name  string  `json:"name"`
 	Price float32 `json:"price"`
@@ -9,6 +10,7 @@ type JsonPlaceholder struct {
 	Owner string  `json:"owner"`
 }
 
+// Можно просто User
 type UserData struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -21,6 +23,9 @@ type User struct {
 	UserData `json:"userdata"`
 }
 
+// Предложение по неймингу:
+// NewUserPayload или что-то такое.
+// В целом я бы подумал над переиспользованием моделей
 type RegisterData struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
