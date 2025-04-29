@@ -21,6 +21,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func LoginUser(c *gin.Context) {
+	var logindata, dbinfo models.RegisterData
+	bytes, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(
+			http.StatusBadGateway,
+			"Error to read your request",
+		)
+		return
+	}
+	err = json.Unmarshal(bytes, &logindata)
+	if err != nil {
+		fmt.Printf("Error due unmarshal json")
+		return
+	}
+
+	newuser, err := database.GetUserFromPGSQL(os.Getenv("CONSTR"), dbinfo)
+	if err != nil {
+		fmt.Printf("Error due getting user from db")
+		return
+	}
+	result, err := auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
+	if err != nil {
+		fmt.Printf("Error due auth user")
+		return
+	}
+
+	if !result {
+		c.JSON(
+			http.StatusForbidden,
+			"Email or Password is not correct",
+		)
+	}
+
+}
+
 // @Summary Registrate user to get new features
 // @Accept json
 // @Param name body models.RegisterData true "Register user in this service"
@@ -43,12 +79,12 @@ func RegisterUser(c *gin.Context) {
 	userd.Email = user.Email
 	userd.Password = string(auth.CryptPassword(user.Password))
 	userd.Role = "user"
-	userd.Token = auth.GenerateToken(userd.UserData)
+	userd.Token = ""
 	RegDataToSend, err := json.Marshal(userd)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
-	database.SentPGSQL(os.Getenv("CONSTR"), RegDataToSend)
+	database.SendRegDataPGSQL(os.Getenv("CONSTR"), RegDataToSend)
 }
 
 // @Summary		Status of PostgreSQL
@@ -81,7 +117,7 @@ func dbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
 // @Summary		Sending data to PostgreSQL
 // @Description	Sending JSON to service and saving in PostgreSQL
 // @Accept			json
-// @Param			name body database.JsonPlaceholder true "Actual data to store in db"
+// @Param			name body models.JsonPlaceholder true "Actual data to store in db"
 // @Success		200
 // @Failure		400
 // @Failure		404
@@ -91,7 +127,7 @@ func send(c *gin.Context) {
 	if err != nil {
 		log.Fatalf("%v", err) // Server killing itself after that error
 	}
-	database.SentPGSQL(os.Getenv("CONSTR"), bytes)
+	database.SentProductPGSQL(os.Getenv("CONSTR"), bytes)
 }
 
 // @Summary		Returns whole data what stored in PostgreSQL
