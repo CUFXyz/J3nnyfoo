@@ -23,6 +23,7 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler) error {
 	)
 	engine.POST("/register", pgHandler.RegisterUser)
 	engine.POST("/send", pgHandler.Send)
+	engine.POST("/login", pgHandler.LoginUser)
 	engine.GET("/dbstatus", pgHandler.DbStatus)
 	engine.GET("/data", pgHandler.Index)
 	return engine.Run(":9090")

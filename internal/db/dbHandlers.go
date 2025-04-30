@@ -13,6 +13,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
 type Handler struct {
 	db *Postgres
 }
@@ -112,7 +116,6 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 func (p *Handler) LoginUser(c *gin.Context) {
 	var (
 		logindata models.RegisterData
-		dbinfo    models.RegisterData
 	)
 
 	bytes, err := io.ReadAll(c.Request.Body)
@@ -129,22 +132,34 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	newuser, err := p.db.GetUserFromPGSQL(dbinfo)
+	newuser, err := p.db.GetUserFromPGSQL(logindata)
+	fmt.Println(newuser.Password)
 	if err != nil {
-		fmt.Printf("Error due getting user from db")
+		fmt.Printf("%v", err)
+		c.JSON(
+			http.StatusBadGateway,
+			"Error while working with db",
+		)
 		return
 	}
-	result, err := auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
+	err = auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
 	if err != nil {
-		fmt.Printf("Error due auth user")
+		fmt.Printf("%v", err)
+		c.JSON(
+			http.StatusBadGateway,
+			fmt.Sprintf("%v", err),
+		)
 		return
 	}
 
-	if !result {
-		c.JSON(
-			http.StatusForbidden,
-			"Email or Password is not correct",
-		)
+	token := auth.ClaimToken(logindata, p.db.Pg)
+	response := TokenResponse{
+		Token: token,
 	}
+	c.SetCookie("token", response.Token, 3600, "/login", "localhost", true, true)
+	c.JSON(
+		http.StatusOK,
+		response,
+	)
 
 }

@@ -58,19 +58,15 @@ func (p *Postgres) SendRegDataPGSQL(data []byte) {
 		fmt.Printf("Can't get affected rows\n")
 	}
 	fmt.Printf("%v rows affected", rws)
-
 }
 
 func (p *Postgres) GetUserFromPGSQL(user models.RegisterData) (*models.RegisterData, error) {
-	row, err := p.Pg.Query("SELECT email, password FROM users")
+	usr := &models.RegisterData{}
+	err := p.Pg.QueryRow("SELECT email, password FROM users WHERE email LIKE $1", &user.Email).Scan(&usr.Email, &usr.Password)
 	if err != nil {
-		return &models.RegisterData{}, fmt.Errorf("error due Quering to postgre")
+		return &models.RegisterData{}, err
 	}
-	err = row.Scan(&user.Email, &user.Password)
-	if err != nil {
-		return &models.RegisterData{}, fmt.Errorf("error due Scanning data to struct")
-	}
-	return &user, nil
+	return usr, nil
 }
 
 func (p *Postgres) GetFromPGSQL() ([]byte, error) {
