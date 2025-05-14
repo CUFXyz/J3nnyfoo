@@ -1,66 +1,72 @@
 package database
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
+	"jennyfood/internal/config"
+	"jennyfood/models"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-type JsonPlaceholder struct {
-	Name  string  `json:"name"`
-	Price float32 `json:"price"`
-	Type  string  `json:"type"`
-	Owner string  `json:"owner"`
+type Postgres struct {
+	Pg  *sqlx.DB
+	cfg string
 }
 
-func ConnectToPGSQL(connectionSTR string) error {
-	db, err := sqlx.Connect("postgres", connectionSTR)
-	if err != nil {
-		return fmt.Errorf("failed to connect to db: %w", err)
-	}
+func ConnectToPGSQL(cfg config.ConfigGlobal) (*Postgres, error) {
 
-	err = db.Ping()
+	db, err := sqlx.Connect("postgres", cfg.Pgcfg.Constr)
 	if err != nil {
-		return fmt.Errorf("failed to ping db: %w", err)
+		return &Postgres{
+			Pg:  nil,
+			cfg: cfg.Pgcfg.Constr,
+		}, err
 	}
 
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
-
-	// No need for passing db instance anywhere else.
-	// Just close it here.
-	defer db.Close()
-	return nil
+	return &Postgres{
+		Pg:  db,
+		cfg: cfg.Pgcfg.Constr,
+	}, nil
 }
 
-func SentPGSQL(connectionSTR string, data []byte) {
-	var jdata JsonPlaceholder
+// Func sending data to the product table
+func (p *Postgres) SentProductPGSQL(data []byte) {
+	var jdata models.JsonPlaceholder
 	json.Unmarshal(data, &jdata)
-	db, err := sql.Open("postgres", connectionSTR)
+	result, err := p.Pg.Exec("INSERT INTO data (Name, price, type, owner) VALUES ($1, $2, $3, $4)", jdata.Name, jdata.Price, jdata.Type, jdata.Owner)
 	if err != nil {
-		fmt.Printf("Error: %v", err)
-	}
-
-	result, err := db.Exec("INSERT INTO data (Name, price, type, owner) VALUES ($1, $2, $3, $4)", jdata.Name, jdata.Price, jdata.Type, jdata.Owner)
-	if err != nil {
-		fmt.Printf("Error: %v", err)
+		fmt.Printf("Error due execute insert to the data table\n")
 		println(result)
 	}
-	db.Close()
 }
 
-func GetFromPGSQL(connectionSTR string) ([]byte, error) {
-	var data []byte
-	db, err := sql.Open("postgres", connectionSTR)
+// Func sending user data to the users table
+func (p *Postgres) SendRegDataPGSQL(data []byte) {
+	var usr models.User
+	json.Unmarshal(data, &usr)
+	_, err := p.Pg.Exec("INSERT INTO users (userID, email, password, role) VALUES ($1, $2, $3, $4)", usr.Uid, usr.Email, usr.Password, usr.Role)
 	if err != nil {
-		return nil, fmt.Errorf("error: %v", err)
+		fmt.Printf("Error due execute insert to the data table\n")
 	}
+}
 
-	items, item := []JsonPlaceholder{}, JsonPlaceholder{}
-	rows, err := db.Query("SELECT name, price, type, owner FROM data")
+func (p *Postgres) GetUserFromPGSQL(user models.RegisterData) (*models.RegisterData, error) {
+	usr := &models.RegisterData{}
+	err := p.Pg.QueryRow("SELECT email, password FROM users WHERE email LIKE $1", &user.Email).Scan(&usr.Email, &usr.Password)
+	if err != nil {
+		return &models.RegisterData{}, err
+	}
+	return usr, nil
+}
+
+func (p *Postgres) GetFromPGSQL() ([]byte, error) {
+	var data []byte
+	items, item := []models.JsonPlaceholder{}, models.JsonPlaceholder{}
+	rows, err := p.Pg.Query("SELECT name, price, type, owner FROM data")
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: %w", err)
 	}
@@ -78,6 +84,5 @@ func GetFromPGSQL(connectionSTR string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: %w", err)
 	}
-	db.Close()
 	return data, nil
 }

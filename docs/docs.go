@@ -46,14 +46,74 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/srv.Status"
+                            "$ref": "#/definitions/models.Status"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/srv.Status"
+                            "$ref": "#/definitions/models.Status"
                         }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "loggining user into service and creating token",
+                "parameters": [
+                    {
+                        "description": "registerdata",
+                        "name": "name",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RegisterData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Registrate user to get new features",
+                "parameters": [
+                    {
+                        "description": "Register user in this service",
+                        "name": "name",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RegisterData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
                     },
                     "404": {
                         "description": "Not Found"
@@ -75,7 +135,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/database.JsonPlaceholder"
+                            "$ref": "#/definitions/models.JsonPlaceholder"
                         }
                     }
                 ],
@@ -94,7 +154,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "database.JsonPlaceholder": {
+        "models.JsonPlaceholder": {
             "type": "object",
             "properties": {
                 "name": {
@@ -111,7 +171,18 @@ const docTemplate = `{
                 }
             }
         },
-        "srv.Status": {
+        "models.RegisterData": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Status": {
             "type": "object",
             "properties": {
                 "pg_status": {
