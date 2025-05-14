@@ -21,6 +21,7 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler) error {
 				"http://localhost:9090/swagger/doc.json"),
 		),
 	)
+	engine.GET("/usr/:email", pgHandler.ReadingCache)
 	engine.POST("/register", pgHandler.RegisterUser)
 	engine.POST("/send", pgHandler.Send)
 	engine.POST("/login", pgHandler.LoginUser)

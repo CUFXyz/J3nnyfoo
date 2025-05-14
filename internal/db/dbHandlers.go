@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"jennyfood/internal/auth"
+	"jennyfood/internal/storage"
 	"jennyfood/models"
 	"log"
 	"net/http"
@@ -12,13 +13,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// A little constructor to sending registerdata to postgresql
 func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, error) {
+	// variable for id
 	var newusid int64
+	// Just trying to get number of rows to setup id
+	// I gonna kill myself with that bullshit later
 	usid, err := p.db.Pg.Exec("SELECT COUNT(*) FROM users")
 	if err != nil {
 		return models.User{}, fmt.Errorf("error due setuping register data")
 	}
 	newusid, _ = usid.RowsAffected()
+	// Preparing and returning struct to sending
 	return models.User{
 		Uid: int(newusid),
 		UserData: models.UserData{
@@ -29,17 +35,22 @@ func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, err
 	}, nil
 }
 
+// Response after loggining user into our service
 type TokenResponse struct {
 	Token string `json:"token"`
 }
 
+// Handler contains db instance and cache instance
 type Handler struct {
-	db *Postgres
+	db      *Postgres
+	storage storage.Cache
 }
 
+// Constructor for our handler struct
 func InitializeHandler(p *Postgres) *Handler {
 	return &Handler{
-		db: p,
+		db:      p,
+		storage: *storage.NewCache(),
 	}
 }
 
@@ -54,13 +65,13 @@ func (p *Handler) DbStatus(c *gin.Context) { // Endpoint to get info about acces
 	var dbStatus models.Status
 
 	switch p.db.Pg {
-	case nil:
+	case nil: // If we can't connect to our DB
 		dbStatus.CurStatus = "DOWN"
 		c.JSON(
 			http.StatusNotFound,
 			dbStatus,
 		)
-	default:
+	default: // We can connect and do things with our DB
 		dbStatus.CurStatus = "UP"
 		c.JSON(
 			http.StatusOK,
@@ -108,6 +119,8 @@ func (p *Handler) Send(c *gin.Context) {
 // @Router		/register [post]
 func (p *Handler) RegisterUser(c *gin.Context) {
 	var user models.RegisterData
+
+	//Reading data from request
 	bytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(
@@ -116,6 +129,8 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 		)
 	}
 	json.Unmarshal(bytes, &user)
+
+	// Small constructor to preparing models.user to sending into DB
 	userd, err := p.SetupRegisterData(user)
 	if err != nil {
 		fmt.Printf("%v", err)
@@ -124,6 +139,8 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
+
+	//Sending prepared models.user to the DB
 	p.db.SendRegDataPGSQL(RegDataToSend)
 }
 
@@ -139,6 +156,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		logindata models.RegisterData
 	)
 
+	// Reading data from request body
 	bytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(
@@ -153,8 +171,9 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
+	// Getting user data from DB, logindata must be email+password
+	// If something wrong - returns badgtw and error
 	newuser, err := p.db.GetUserFromPGSQL(logindata)
-	fmt.Println(newuser.Password)
 	if err != nil {
 		fmt.Printf("%v", err)
 		c.JSON(
@@ -163,6 +182,10 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		)
 		return
 	}
+
+	// Checking passwords hashed and !hashed
+	// If hashed != !hashed returns badgtw
+	// else going further to generating token
 	err = auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
 	if err != nil {
 		fmt.Printf("%v", err)
@@ -173,14 +196,42 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
+	// Generating token for logged user
 	token := auth.GenerateToken(logindata)
+
+	//Writing token to the cache storage
+	p.storage.WriteCache(logindata.Email, token)
+
+	// Making Response to user
 	response := TokenResponse{
 		Token: token,
 	}
+
+	//Setting token to store in the user browser and responding to him
 	c.SetCookie("token", response.Token, 3600, "/login", "localhost", true, true)
 	c.JSON(
 		http.StatusOK,
 		response,
+	)
+}
+
+func (p *Handler) ReadingCache(c *gin.Context) {
+	email := c.Param("email")
+	result, err := p.storage.GetValue(email)
+	fmt.Println()
+	fmt.Println("Printing storage")
+	fmt.Println(p.storage.Cache)
+	fmt.Println()
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			fmt.Sprintf("%v | %v", error.Error(err), email),
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
 	)
 
 }

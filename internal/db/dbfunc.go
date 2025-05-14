@@ -36,8 +36,9 @@ func ConnectToPGSQL(cfg config.ConfigGlobal) (*Postgres, error) {
 // Func sending data to the product table
 func (p *Postgres) SentProductPGSQL(data []byte) {
 	var jdata models.JsonPlaceholder
+	query := "INSERT INTO data (Name, price, type, owner) VALUES ($1, $2, $3, $4)"
 	json.Unmarshal(data, &jdata)
-	result, err := p.Pg.Exec("INSERT INTO data (Name, price, type, owner) VALUES ($1, $2, $3, $4)", jdata.Name, jdata.Price, jdata.Type, jdata.Owner)
+	result, err := p.Pg.Exec(query, jdata.Name, jdata.Price, jdata.Type, jdata.Owner)
 	if err != nil {
 		fmt.Printf("Error due execute insert to the data table\n")
 		println(result)
@@ -47,8 +48,9 @@ func (p *Postgres) SentProductPGSQL(data []byte) {
 // Func sending user data to the users table
 func (p *Postgres) SendRegDataPGSQL(data []byte) {
 	var usr models.User
+	query := "INSERT INTO users (userID, email, password, role) VALUES ($1, $2, $3, $4)"
 	json.Unmarshal(data, &usr)
-	_, err := p.Pg.Exec("INSERT INTO users (userID, email, password, role) VALUES ($1, $2, $3, $4)", usr.Uid, usr.Email, usr.Password, usr.Role)
+	_, err := p.Pg.Exec(query, usr.Uid, usr.Email, usr.Password, usr.Role)
 	if err != nil {
 		fmt.Printf("Error due execute insert to the data table\n")
 	}
@@ -56,7 +58,8 @@ func (p *Postgres) SendRegDataPGSQL(data []byte) {
 
 func (p *Postgres) GetUserFromPGSQL(user models.RegisterData) (*models.RegisterData, error) {
 	usr := &models.RegisterData{}
-	err := p.Pg.QueryRow("SELECT email, password FROM users WHERE email LIKE $1", &user.Email).Scan(&usr.Email, &usr.Password)
+	query := "SELECT email, password FROM users WHERE email LIKE $1"
+	err := p.Pg.QueryRow(query, &user.Email).Scan(&usr.Email, &usr.Password)
 	if err != nil {
 		return &models.RegisterData{}, err
 	}
@@ -66,7 +69,8 @@ func (p *Postgres) GetUserFromPGSQL(user models.RegisterData) (*models.RegisterD
 func (p *Postgres) GetFromPGSQL() ([]byte, error) {
 	var data []byte
 	items, item := []models.JsonPlaceholder{}, models.JsonPlaceholder{}
-	rows, err := p.Pg.Query("SELECT name, price, type, owner FROM data")
+	query := "SELECT name, price, type, owner FROM data"
+	rows, err := p.Pg.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: %w", err)
 	}
