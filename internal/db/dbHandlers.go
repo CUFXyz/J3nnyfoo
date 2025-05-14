@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"jennyfood/internal/auth"
+	"jennyfood/internal/config"
 	"jennyfood/internal/storage"
 	"jennyfood/models"
 	"log"
@@ -29,7 +30,7 @@ func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, err
 		Uid: int(newusid),
 		UserData: models.UserData{
 			Email:    userd.Email,
-			Password: string(auth.CryptPassword(userd.Password)),
+			Password: string(p.authSystem.CryptPassword(userd.Password)),
 			Role:     "user",
 		},
 	}, nil
@@ -42,15 +43,19 @@ type TokenResponse struct {
 
 // Handler contains db instance and cache instance
 type Handler struct {
-	db      *Postgres
-	storage storage.Cache
+	db         *Postgres
+	storage    storage.Cache
+	authSystem auth.AuthInstance
 }
 
 // Constructor for our handler struct
-func InitializeHandler(p *Postgres) *Handler {
+func InitializeHandler(p *Postgres, config config.AuthConfig) *Handler {
 	return &Handler{
 		db:      p,
 		storage: *storage.NewCache(),
+		authSystem: auth.AuthInstance{
+			AuthCfg: config,
+		},
 	}
 }
 
@@ -186,7 +191,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	// Checking passwords hashed and !hashed
 	// If hashed != !hashed returns badgtw
 	// else going further to generating token
-	err = auth.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
+	err = p.authSystem.AuthFunc([]byte(newuser.Password), []byte(logindata.Password))
 	if err != nil {
 		fmt.Printf("%v", err)
 		c.JSON(
@@ -197,7 +202,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	}
 
 	// Generating token for logged user
-	token := auth.GenerateToken(logindata)
+	token := p.authSystem.GenerateToken(logindata)
 
 	//Writing token to the cache storage
 	p.storage.WriteCache(logindata.Email, token)
@@ -218,10 +223,6 @@ func (p *Handler) LoginUser(c *gin.Context) {
 func (p *Handler) ReadingCache(c *gin.Context) {
 	email := c.Param("email")
 	result, err := p.storage.GetValue(email)
-	fmt.Println()
-	fmt.Println("Printing storage")
-	fmt.Println(p.storage.Cache)
-	fmt.Println()
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
