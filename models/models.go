@@ -1,7 +1,5 @@
 package models
 
-import "github.com/google/uuid"
-
 type JsonPlaceholder struct {
 	Name  string  `json:"name"`
 	Price float32 `json:"price"`
@@ -13,11 +11,10 @@ type UserData struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
-	Token    string `json:"token"`
 }
 
 type User struct {
-	Uid      uuid.UUID `json:"userid"`
+	Uid      int `json:"userid"`
 	UserData `json:"userdata"`
 }
 

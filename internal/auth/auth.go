@@ -3,12 +3,10 @@ package auth
 import (
 	"fmt"
 	"jennyfood/models"
-	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,18 +25,6 @@ func CryptPassword(password string) []byte {
 		return []byte(password)
 	}
 	return cryptedPassword
-}
-
-func ClaimToken(us models.RegisterData, db *sqlx.DB) string {
-	newus := models.UserData{}
-	newus.Token = GenerateToken(us)
-
-	_, err := db.Exec("UPDATE users SET token = $1 WHERE email = $2;", newus.Token, us.Email)
-	if err != nil {
-		log.Fatalf("Error due executing updating row")
-		return ""
-	}
-	return newus.Token
 }
 
 func GenerateToken(us models.RegisterData) string {

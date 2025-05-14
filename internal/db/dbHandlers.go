@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type TokenResponse struct {
@@ -30,8 +29,8 @@ func InitializeHandler(p *Postgres) *Handler {
 // @Summary		Status of PostgreSQL
 // @Description	Returns status of PostgreSQL in json
 // @Produce		json
-// @Success		200 {object} models.Status
-// @Failure		400 {object} models.Status
+// @Success		200	{object}	models.Status
+// @Failure		400	{object}	models.Status
 // @Failure		404
 // @Router			/dbstatus [get]
 func (p *Handler) DbStatus(c *gin.Context) { // Endpoint to get info about access to the PG
@@ -70,7 +69,7 @@ func (p *Handler) Index(c *gin.Context) {
 // @Summary		Sending data to PostgreSQL
 // @Description	Sending JSON to service and saving in PostgreSQL
 // @Accept			json
-// @Param			name body models.JsonPlaceholder true "Actual data to store in db"
+// @Param			name	body	models.JsonPlaceholder	true	"Actual data to store in db"
 // @Success		200
 // @Failure		400
 // @Failure		404
@@ -83,13 +82,13 @@ func (p *Handler) Send(c *gin.Context) {
 	p.db.SentProductPGSQL(bytes)
 }
 
-// @Summary Registrate user to get new features
-// @Accept json
-// @Param name body models.RegisterData true "Register user in this service"
-// @Success 200
-// @Failure 400
-// @Failure 404
-// @Router /register [post]
+// @Summary	Registrate user to get new features
+// @Accept		json
+// @Param		name	body	models.RegisterData	true	"Register user in this service"
+// @Success	200
+// @Failure	400
+// @Failure	404
+// @Router		/register [post]
 func (p *Handler) RegisterUser(c *gin.Context) {
 	var user models.RegisterData
 	var userd models.User
@@ -101,11 +100,11 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 		)
 	}
 	json.Unmarshal(bytes, &user)
-	userd.Uid = uuid.New()
+	userd.Uid = 0
+	_ = p.db.Pg.QueryRow("SELECT COUNT(*) FROM users").Scan(&userd.Uid)
 	userd.Email = user.Email
 	userd.Password = string(auth.CryptPassword(user.Password))
 	userd.Role = "user"
-	userd.Token = ""
 	RegDataToSend, err := json.Marshal(userd)
 	if err != nil {
 		fmt.Printf("%v", err)
@@ -113,6 +112,13 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 	p.db.SendRegDataPGSQL(RegDataToSend)
 }
 
+// @Summary	loggining user into service and creating token
+// @Accept		json
+// @Param		name	body	models.RegisterData	true	"registerdata"
+// @Success	200
+// @Failure	400
+// @Failure	404
+// @Router		/login [post]
 func (p *Handler) LoginUser(c *gin.Context) {
 	var (
 		logindata models.RegisterData
@@ -152,7 +158,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	token := auth.ClaimToken(logindata, p.db.Pg)
+	token := auth.GenerateToken(logindata)
 	response := TokenResponse{
 		Token: token,
 	}

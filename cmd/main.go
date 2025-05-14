@@ -17,7 +17,10 @@ import (
 func main() {
 
 	cfg := config.InitConfig()
-	postgres := database.ConnectToPGSQL(*cfg)
+	postgres, err := database.ConnectToPGSQL(*cfg)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	pgHandler := database.InitializeHandler(postgres)
 	log.Fatal(
 		srv.RunGinServer(

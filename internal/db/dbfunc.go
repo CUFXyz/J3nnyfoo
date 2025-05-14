@@ -15,15 +15,14 @@ type Postgres struct {
 	cfg string
 }
 
-func ConnectToPGSQL(cfg config.ConfigGlobal) *Postgres {
+func ConnectToPGSQL(cfg config.ConfigGlobal) (*Postgres, error) {
 
 	db, err := sqlx.Connect("postgres", cfg.Pgcfg.Constr)
 	if err != nil {
-		fmt.Printf("failed to connect to db: %v", err)
 		return &Postgres{
 			Pg:  nil,
 			cfg: cfg.Pgcfg.Constr,
-		}
+		}, err
 	}
 
 	db.SetMaxOpenConns(25)
@@ -31,7 +30,7 @@ func ConnectToPGSQL(cfg config.ConfigGlobal) *Postgres {
 	return &Postgres{
 		Pg:  db,
 		cfg: cfg.Pgcfg.Constr,
-	}
+	}, nil
 }
 
 // Func sending data to the product table
@@ -49,15 +48,10 @@ func (p *Postgres) SentProductPGSQL(data []byte) {
 func (p *Postgres) SendRegDataPGSQL(data []byte) {
 	var usr models.User
 	json.Unmarshal(data, &usr)
-	result, err := p.Pg.Exec("INSERT INTO users (uid, email, password, role, token) VALUES ($1, $2, $3, $4, $5)", usr.Uid, usr.Email, usr.Password, usr.Role, usr.Token)
+	_, err := p.Pg.Exec("INSERT INTO users (uid, email, password, role) VALUES ($1, $2, $3, $4)", usr.Uid, usr.Email, usr.Password, usr.Role)
 	if err != nil {
 		fmt.Printf("Error due execute insert to the data table\n")
 	}
-	rws, err := result.RowsAffected()
-	if err != nil {
-		fmt.Printf("Can't get affected rows\n")
-	}
-	fmt.Printf("%v rows affected", rws)
 }
 
 func (p *Postgres) GetUserFromPGSQL(user models.RegisterData) (*models.RegisterData, error) {

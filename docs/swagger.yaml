@@ -59,6 +59,25 @@ paths:
         "404":
           description: Not Found
       summary: Status of PostgreSQL
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: registerdata
+        in: body
+        name: name
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterData'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: loggining user into service and creating token
   /register:
     post:
       consumes:
