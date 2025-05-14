@@ -48,7 +48,7 @@ func (p *Postgres) SentProductPGSQL(data []byte) {
 func (p *Postgres) SendRegDataPGSQL(data []byte) {
 	var usr models.User
 	json.Unmarshal(data, &usr)
-	_, err := p.Pg.Exec("INSERT INTO users (uid, email, password, role) VALUES ($1, $2, $3, $4)", usr.Uid, usr.Email, usr.Password, usr.Role)
+	_, err := p.Pg.Exec("INSERT INTO users (userID, email, password, role) VALUES ($1, $2, $3, $4)", usr.Uid, usr.Email, usr.Password, usr.Role)
 	if err != nil {
 		fmt.Printf("Error due execute insert to the data table\n")
 	}

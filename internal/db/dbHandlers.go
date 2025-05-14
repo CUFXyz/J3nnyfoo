@@ -12,6 +12,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, error) {
+	var newusid int64
+	usid, err := p.db.Pg.Exec("SELECT COUNT(*) FROM users")
+	if err != nil {
+		return models.User{}, fmt.Errorf("error due setuping register data")
+	}
+	newusid, _ = usid.RowsAffected()
+	return models.User{
+		Uid: int(newusid),
+		UserData: models.UserData{
+			Email:    userd.Email,
+			Password: string(auth.CryptPassword(userd.Password)),
+			Role:     "user",
+		},
+	}, nil
+}
+
 type TokenResponse struct {
 	Token string `json:"token"`
 }
@@ -91,7 +108,6 @@ func (p *Handler) Send(c *gin.Context) {
 // @Router		/register [post]
 func (p *Handler) RegisterUser(c *gin.Context) {
 	var user models.RegisterData
-	var userd models.User
 	bytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(
@@ -100,11 +116,10 @@ func (p *Handler) RegisterUser(c *gin.Context) {
 		)
 	}
 	json.Unmarshal(bytes, &user)
-	userd.Uid = 0
-	_ = p.db.Pg.QueryRow("SELECT COUNT(*) FROM users").Scan(&userd.Uid)
-	userd.Email = user.Email
-	userd.Password = string(auth.CryptPassword(user.Password))
-	userd.Role = "user"
+	userd, err := p.SetupRegisterData(user)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
 	RegDataToSend, err := json.Marshal(userd)
 	if err != nil {
 		fmt.Printf("%v", err)
