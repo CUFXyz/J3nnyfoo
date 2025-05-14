@@ -21,3 +21,4 @@ make run
 ```bash
 go run ./cmd/main.go
 ```
+![image](https://github.com/user-attachments/assets/c7074516-3b90-45d1-a827-7579092dd37f)
