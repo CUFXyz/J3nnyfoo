@@ -163,6 +163,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 
 	// Reading data from request body
 	bytes, err := io.ReadAll(c.Request.Body)
+
 	if err != nil {
 		c.JSON(
 			http.StatusBadGateway,
@@ -170,6 +171,8 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		)
 		return
 	}
+	//err = c.Request.ParseForm() // i gonna kill myself
+
 	err = json.Unmarshal(bytes, &logindata)
 	if err != nil {
 		fmt.Printf("Error due unmarshal json")

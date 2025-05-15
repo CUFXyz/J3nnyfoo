@@ -7,8 +7,8 @@ import (
 )
 
 func (ai *AuthInstance) AuthHandler(c *gin.Context) {
-	token, exists := c.Get("token")
-	if !exists {
+	token, exists := c.Cookie("token")
+	if exists != nil {
 		c.JSON(
 			http.StatusForbidden,
 			gin.H{
