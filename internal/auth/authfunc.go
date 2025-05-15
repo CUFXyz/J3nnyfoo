@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"jennyfood/internal/config"
+	"jennyfood/internal/storage"
 	"jennyfood/models"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 type AuthInstance struct {
 	AuthCfg config.AuthConfig
+	Cache   *storage.Cache
 }
 
 // Dehashing password and comparing them to pass user or not

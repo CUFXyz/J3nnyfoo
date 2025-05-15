@@ -11,18 +11,25 @@ func (ai *AuthInstance) AuthHandler(c *gin.Context) {
 	if exists != nil {
 		c.JSON(
 			http.StatusForbidden,
-			gin.H{
-				"error": "Token is not found",
-			},
+			"Service is available for logged users",
 		)
-		c.Abort()
+		return
+	}
+
+	result, err := ai.Cache.GetValue(token)
+	if err != nil {
+		c.JSON(
+			http.StatusBadGateway,
+			"Something wrong with app cache",
+		)
 		return
 	}
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"OK": token,
+			"token": result,
+			"Auth":  "OK",
 		},
 	)
 }

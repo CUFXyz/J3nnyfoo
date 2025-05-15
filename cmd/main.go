@@ -6,6 +6,7 @@ import (
 	"jennyfood/internal/config"
 	database "jennyfood/internal/db"
 	"jennyfood/internal/srv"
+	"jennyfood/internal/storage"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -18,12 +19,13 @@ import (
 func main() {
 
 	cfg := config.InitConfig()
-	auth := auth.AuthInstance{AuthCfg: cfg.AuthCfg}
+	cache := storage.NewCache()
+	auth := auth.AuthInstance{AuthCfg: cfg.AuthCfg, Cache: cache}
 	postgres, err := database.ConnectToPGSQL(*cfg)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	pgHandler := database.InitializeHandler(postgres, auth.AuthCfg)
+	pgHandler := database.InitializeHandler(postgres, auth.AuthCfg, cache)
 	log.Fatal(
 		srv.RunGinServer(
 			gin.Default(),

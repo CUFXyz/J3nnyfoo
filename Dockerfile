@@ -8,7 +8,6 @@ COPY go.sum /fooapp
 RUN go mod tidy
 
 COPY . /fooapp/
-COPY templates ./templates
 
 ENV port=9090
 EXPOSE 9090

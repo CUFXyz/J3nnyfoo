@@ -2,7 +2,6 @@ package srv
 
 import (
 	_ "jennyfood/docs"
-	"net/http"
 
 	"jennyfood/internal/auth"
 	database "jennyfood/internal/db"
@@ -25,7 +24,7 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler, auth auth.Aut
 	)
 	engine.LoadHTMLFiles("templates/login.html")
 	// Group of endpoints for logged users
-	userGroup := engine.Group("/usr")
+	userGroup := engine.Group("/")
 	userGroup.Use(auth.AuthHandler)
 	userGroup.POST("/send", pgHandler.Send)
 	userGroup.GET("/usr/:email", pgHandler.ReadingCache)
@@ -35,17 +34,6 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler, auth auth.Aut
 	// For losers
 	engine.POST("/register", pgHandler.RegisterUser)
 	engine.POST("/login", pgHandler.LoginUser)
-	engine.GET("/login", func(c *gin.Context) {
-		c.HTML(
-
-			http.StatusOK,
-			"login.html",
-			gin.H{
-				"title":  "User Login form",
-				"Action": "/submit",
-			},
-		)
-	})
 	engine.GET("/dbstatus", pgHandler.DbStatus)
 	return engine.Run(":9090")
 }

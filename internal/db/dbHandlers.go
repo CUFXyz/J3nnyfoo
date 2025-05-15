@@ -49,7 +49,7 @@ type Handler struct {
 }
 
 // Constructor for our handler struct
-func InitializeHandler(p *Postgres, config config.AuthConfig) *Handler {
+func InitializeHandler(p *Postgres, config config.AuthConfig, s *storage.Cache) *Handler {
 	return &Handler{
 		db:      p,
 		storage: *storage.NewCache(),
@@ -171,7 +171,6 @@ func (p *Handler) LoginUser(c *gin.Context) {
 		)
 		return
 	}
-	//err = c.Request.ParseForm() // i gonna kill myself
 
 	err = json.Unmarshal(bytes, &logindata)
 	if err != nil {
