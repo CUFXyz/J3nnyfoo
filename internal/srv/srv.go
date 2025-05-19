@@ -22,16 +22,16 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler, auth auth.Aut
 				"http://localhost:9090/swagger/doc.json"),
 		),
 	)
-	engine.LoadHTMLFiles("templates/login.html")
 	// Group of endpoints for logged users
 	userGroup := engine.Group("/")
 	userGroup.Use(auth.AuthHandler)
 	userGroup.POST("/send", pgHandler.Send)
-	userGroup.GET("/usr/:email", pgHandler.ReadingCache)
+
 	userGroup.GET("/data", pgHandler.Index)
 	//
 
 	// For losers
+	engine.GET("/usr/:email", pgHandler.ReadingCache)
 	engine.POST("/register", pgHandler.RegisterUser)
 	engine.POST("/login", pgHandler.LoginUser)
 	engine.GET("/dbstatus", pgHandler.DbStatus)

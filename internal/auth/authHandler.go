@@ -13,6 +13,7 @@ func (ai *AuthInstance) AuthHandler(c *gin.Context) {
 			http.StatusForbidden,
 			"Service is available for logged users",
 		)
+		c.Abort()
 		return
 	}
 
@@ -22,6 +23,7 @@ func (ai *AuthInstance) AuthHandler(c *gin.Context) {
 			http.StatusBadGateway,
 			"Something wrong with app cache",
 		)
+		c.Abort()
 		return
 	}
 

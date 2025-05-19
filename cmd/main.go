@@ -19,13 +19,14 @@ import (
 func main() {
 
 	cfg := config.InitConfig()
+	postgres, err := database.ConnectToPGSQL(*cfg)
 	cache := storage.NewCache()
 	auth := auth.AuthInstance{AuthCfg: cfg.AuthCfg, Cache: cache}
-	postgres, err := database.ConnectToPGSQL(*cfg)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	pgHandler := database.InitializeHandler(postgres, auth.AuthCfg, cache)
+	pgHandler := database.InitializeHandler(postgres, cache, auth)
+
 	log.Fatal(
 		srv.RunGinServer(
 			gin.Default(),

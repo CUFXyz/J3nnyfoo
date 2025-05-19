@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"jennyfood/internal/auth"
-	"jennyfood/internal/config"
 	"jennyfood/internal/storage"
 	"jennyfood/models"
 	"log"
@@ -13,6 +12,27 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// Response after loggining user into our service
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
+// Handler contains db instance and cache instance
+type Handler struct {
+	db         *Postgres
+	storage    *storage.Cache
+	authSystem auth.AuthInstance
+}
+
+// Constructor for our handler struct
+func InitializeHandler(p *Postgres, storage *storage.Cache, auth auth.AuthInstance) *Handler {
+	return &Handler{
+		db:         p,
+		storage:    storage,
+		authSystem: auth,
+	}
+}
 
 // A little constructor to sending registerdata to postgresql
 func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, error) {
@@ -34,29 +54,6 @@ func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, err
 			Role:     "user",
 		},
 	}, nil
-}
-
-// Response after loggining user into our service
-type TokenResponse struct {
-	Token string `json:"token"`
-}
-
-// Handler contains db instance and cache instance
-type Handler struct {
-	db         *Postgres
-	storage    storage.Cache
-	authSystem auth.AuthInstance
-}
-
-// Constructor for our handler struct
-func InitializeHandler(p *Postgres, config config.AuthConfig, s *storage.Cache) *Handler {
-	return &Handler{
-		db:      p,
-		storage: *storage.NewCache(),
-		authSystem: auth.AuthInstance{
-			AuthCfg: config,
-		},
-	}
 }
 
 // @Summary		Status of PostgreSQL
@@ -207,7 +204,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	token := p.authSystem.GenerateToken(logindata)
 
 	//Writing token to the cache storage
-	p.storage.WriteCache(logindata.Email, token)
+	p.storage.WriteCache(token, logindata.Email)
 
 	// Making Response to user
 	response := TokenResponse{
@@ -224,17 +221,37 @@ func (p *Handler) LoginUser(c *gin.Context) {
 
 func (p *Handler) ReadingCache(c *gin.Context) {
 	email := c.Param("email")
+	var emaildb string
+	query := "SELECT email FROM users WHERE email = $1"
+	err := p.db.Pg.QueryRow(query, &email).Scan(&emaildb)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			fmt.Sprintf("%v | %v", error.Error(err), "pg skill issue"),
+		)
+		c.Abort()
+		return
+	}
 	result, err := p.storage.GetValue(email)
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
-			fmt.Sprintf("%v | %v", error.Error(err), email),
+			fmt.Sprintf("%v | %v", error.Error(err), result),
 		)
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		result,
-	)
-
+	if email == emaildb {
+		c.JSON(
+			http.StatusOK,
+			result,
+		)
+		return
+	} else {
+		c.JSON(
+			http.StatusBadRequest,
+			"User not found",
+		)
+		c.Abort()
+		return
+	}
 }

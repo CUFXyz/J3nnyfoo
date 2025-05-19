@@ -47,5 +47,5 @@ func (ai *AuthInstance) GenerateToken(us models.RegisterData) string {
 		fmt.Printf("Error due signing string")
 		return ""
 	}
-	return signed
+	return fmt.Sprintf("token=%v", signed)
 }
