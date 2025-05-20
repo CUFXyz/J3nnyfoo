@@ -21,7 +21,7 @@ func main() {
 	cfg := config.InitConfig()
 	postgres, err := database.ConnectToPGSQL(*cfg)
 	cache := storage.NewCache()
-	auth := auth.AuthInstance{AuthCfg: cfg.AuthCfg, Cache: cache}
+	auth := auth.AuthInstance{AuthCfg: cfg.AuthCfg, Cache: cache, Pgdb: postgres.Pg}
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

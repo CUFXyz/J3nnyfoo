@@ -9,17 +9,17 @@ type Cache struct {
 	Mu    sync.Mutex
 }
 
-func (c *Cache) WriteCache(email, token string) error {
-	c.Mu.Lock()
-	defer c.Mu.Unlock()
+func (c *Cache) WriteCache(token, email string) error {
+
 	if email == "" || token == "" {
 		return ErrEmptyInput
 	}
-
-	if _, ok := c.Cache[email]; ok {
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
+	if _, ok := c.Cache[token]; ok {
 		return ErrAlreadyExists
 	}
-	c.Cache[email] = token
+	c.Cache[token] = email
 	return nil
 }
 
@@ -37,13 +37,4 @@ func NewCache() *Cache {
 	var c Cache
 	c.Cache = make(map[string]string)
 	return &c
-}
-
-func (c *Cache) LookUp(value string) (bool, error) {
-	for _, link := range c.Cache {
-		if link == value {
-			return true, ErrAlreadyExists
-		}
-	}
-	return false, nil
 }

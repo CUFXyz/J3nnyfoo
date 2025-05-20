@@ -109,7 +109,7 @@ func (p *Handler) Send(c *gin.Context) {
 	if err != nil {
 		log.Fatalf("%v", err) // Server killing itself after that error
 	}
-	p.db.SentProductPGSQL(bytes)
+	p.db.SendProductPGSQL(bytes)
 }
 
 // @Summary	Registrate user to get new features

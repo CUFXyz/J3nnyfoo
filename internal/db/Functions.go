@@ -10,6 +10,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type Sender interface {
+	SendProductPGSQL(data []byte)
+	SendRegDataPGSQL(data []byte)
+}
+
 type Postgres struct {
 	Pg  *sqlx.DB
 	cfg string
@@ -34,7 +39,7 @@ func ConnectToPGSQL(cfg config.ConfigGlobal) (*Postgres, error) {
 }
 
 // Func sending data to the product table
-func (p *Postgres) SentProductPGSQL(data []byte) {
+func (p *Postgres) SendProductPGSQL(data []byte) {
 	var jdata models.JsonPlaceholder
 	query := "INSERT INTO data (Name, price, type, owner) VALUES ($1, $2, $3, $4)"
 	json.Unmarshal(data, &jdata)

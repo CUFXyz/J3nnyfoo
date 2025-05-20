@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthInstance struct {
 	AuthCfg config.AuthConfig
 	Cache   *storage.Cache
+	Pgdb    *sqlx.DB
 }
 
 // Dehashing password and comparing them to pass user or not
