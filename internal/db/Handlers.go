@@ -96,6 +96,8 @@ func (p *Handler) Index(c *gin.Context) {
 	}
 }
 
+// @Security		ApiKeyAuth
+//
 // @Summary		Sending data to PostgreSQL
 // @Description	Sending JSON to service and saving in PostgreSQL
 // @Accept			json
@@ -203,9 +205,15 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	// Generating token for logged user
 	token := p.authSystem.GenerateToken(logindata)
 
+	fmt.Println(token)
 	//Writing token to the cache storage
-	p.storage.WriteCache(token, logindata.Email)
-
+	writeErr := p.storage.WriteCache(token, logindata.Email)
+	if writeErr != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			fmt.Sprintf("error writing token to cache %v", writeErr),
+		)
+	}
 	// Making Response to user
 	response := TokenResponse{
 		Token: token,

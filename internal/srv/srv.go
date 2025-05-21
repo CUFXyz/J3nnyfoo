@@ -26,7 +26,6 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler, auth auth.Aut
 	userGroup := engine.Group("/")
 	userGroup.Use(auth.AuthHandler)
 	userGroup.POST("/send", pgHandler.Send)
-
 	userGroup.GET("/data", pgHandler.Index)
 	//
 

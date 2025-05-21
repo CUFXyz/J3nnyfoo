@@ -123,6 +123,11 @@ const docTemplate = `{
         },
         "/send": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Sending JSON to service and saving in PostgreSQL",
                 "consumes": [
                     "application/json"
@@ -189,6 +194,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

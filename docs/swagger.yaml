@@ -116,5 +116,12 @@ paths:
           description: Bad Request
         "404":
           description: Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Sending data to PostgreSQL
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

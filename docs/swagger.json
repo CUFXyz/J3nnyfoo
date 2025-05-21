@@ -116,6 +116,11 @@
         },
         "/send": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Sending JSON to service and saving in PostgreSQL",
                 "consumes": [
                     "application/json"
@@ -182,6 +187,13 @@
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

@@ -9,28 +9,28 @@ type Cache struct {
 	Mu    sync.Mutex
 }
 
-func (c *Cache) WriteCache(token, email string) error {
-
+func (c *Cache) WriteCache(token string, email string) error {
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 	if email == "" || token == "" {
 		return ErrEmptyInput
 	}
-	c.Mu.Lock()
-	defer c.Mu.Unlock()
+
 	if _, ok := c.Cache[token]; ok {
 		return ErrAlreadyExists
 	}
-	c.Cache[token] = email
+	c.Cache[token] = token
 	return nil
 }
 
-func (c *Cache) GetValue(val string) (string, error) {
+func (c *Cache) GetValue(token string) (string, error) {
 	c.Mu.Lock()
 	defer c.Mu.Unlock()
-	resource, ok := c.Cache[val]
+	email, ok := c.Cache[token]
 	if !ok {
 		return "", ErrNotFound
 	}
-	return resource, nil
+	return email, nil
 }
 
 func NewCache() *Cache {

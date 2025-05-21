@@ -16,6 +16,10 @@ import (
 // @version		0.1
 // @description	Small project what accepts jsons and storing it in the postgreSQL
 // @host			localhost:9090
+
+// @securityDefinitions.apiKey	ApiKeyAuth
+// @in							header
+// @name						Authorization
 func main() {
 
 	cfg := config.InitConfig()
