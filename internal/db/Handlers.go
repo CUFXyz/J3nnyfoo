@@ -227,6 +227,7 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	)
 }
 
+// TODO: переделай эту логику под токен в качестве ключа в мапе
 func (p *Handler) ReadingCache(c *gin.Context) {
 	email := c.Param("email")
 	var emaildb string

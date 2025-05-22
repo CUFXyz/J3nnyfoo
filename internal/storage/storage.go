@@ -19,7 +19,7 @@ func (c *Cache) WriteCache(token string, email string) error {
 	if _, ok := c.Cache[token]; ok {
 		return ErrAlreadyExists
 	}
-	c.Cache[token] = token
+	c.Cache[token] = email
 	return nil
 }
 
