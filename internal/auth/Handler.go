@@ -16,6 +16,7 @@ func (ai *AuthInstance) AuthHandler(ctx *gin.Context) {
 				"error": "No token provided",
 			},
 		)
+		ctx.Abort()
 		return
 	}
 

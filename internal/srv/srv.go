@@ -27,12 +27,13 @@ func RunGinServer(engine *gin.Engine, pgHandler *database.Handler, auth auth.Aut
 	userGroup.Use(auth.AuthHandler)
 	userGroup.POST("/send", pgHandler.Send)
 	userGroup.GET("/data", pgHandler.Index)
+	userGroup.GET("/dbstatus", pgHandler.DbStatus)
+	userGroup.POST("/delete", pgHandler.RemoveData)
 	//
 
 	// For losers
-	engine.GET("/usr/:email", pgHandler.ReadingCache)
 	engine.POST("/register", pgHandler.RegisterUser)
 	engine.POST("/login", pgHandler.LoginUser)
-	engine.GET("/dbstatus", pgHandler.DbStatus)
+
 	return engine.Run(":9090")
 }

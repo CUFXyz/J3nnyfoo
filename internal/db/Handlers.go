@@ -56,6 +56,8 @@ func (p *Handler) SetupRegisterData(userd models.RegisterData) (models.User, err
 	}, nil
 }
 
+// @Security		ApiKeyAuth
+//
 // @Summary		Status of PostgreSQL
 // @Description	Returns status of PostgreSQL in json
 // @Produce		json
@@ -83,6 +85,8 @@ func (p *Handler) DbStatus(c *gin.Context) { // Endpoint to get info about acces
 	}
 }
 
+// @Security		ApiKeyAuth
+//
 // @Summary		Returns whole data what stored in PostgreSQL
 // @Description	Returns an array of JSONS with data
 // @Produce		json
@@ -227,40 +231,37 @@ func (p *Handler) LoginUser(c *gin.Context) {
 	)
 }
 
-// TODO: переделай эту логику под токен в качестве ключа в мапе
-func (p *Handler) ReadingCache(c *gin.Context) {
-	email := c.Param("email")
-	var emaildb string
-	query := "SELECT email FROM users WHERE email = $1"
-	err := p.db.Pg.QueryRow(query, &email).Scan(&emaildb)
+// @Security		ApiKeyAuth
+//
+// @Summary		Removing data to PostgreSQL
+// @Description	Sending JSON to service and deleting in PostgreSQL
+// @Accept			json
+// @Param			name	body	models.JsonPlaceholder	true	"Actual data to store in db"
+// @Success		200
+// @Failure		400
+// @Failure		404
+// @Router			/delete [post]
+func (p *Handler) RemoveData(c *gin.Context) {
+	bytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
-			fmt.Sprintf("%v | %v", error.Error(err), "pg skill issue"),
+			error.Error(err),
 		)
-		c.Abort()
 		return
 	}
-	result, err := p.storage.GetValue(email)
+
+	err = p.db.RemoveFromPGSQL(bytes)
 	if err != nil {
 		c.JSON(
-			http.StatusBadRequest,
-			fmt.Sprintf("%v | %v", error.Error(err), result),
+			http.StatusBadGateway,
+			error.Error(err),
 		)
 		return
 	}
-	if email == emaildb {
-		c.JSON(
-			http.StatusOK,
-			result,
-		)
-		return
-	} else {
-		c.JSON(
-			http.StatusBadRequest,
-			"User not found",
-		)
-		c.Abort()
-		return
-	}
+
+	c.JSON(
+		http.StatusOK,
+		"Successfuly deleted",
+	)
 }

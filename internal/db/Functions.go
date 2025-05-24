@@ -95,3 +95,20 @@ func (p *Postgres) GetFromPGSQL() ([]byte, error) {
 	}
 	return data, nil
 }
+
+// Func deleting data from db
+func (p *Postgres) RemoveFromPGSQL(data []byte) error {
+	var PlaceholderToDelete models.JsonPlaceholder
+	query := "DELETE FROM data WHERE name = $1;"
+
+	err := json.Unmarshal(data, &PlaceholderToDelete)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.Pg.Exec(query, PlaceholderToDelete.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}

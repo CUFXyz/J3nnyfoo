@@ -13,7 +13,7 @@ import (
 )
 
 // @title			J3nnyFoo JSON Project
-// @version		0.1
+// @version		1.0
 // @description	Small project what accepts jsons and storing it in the postgreSQL
 // @host			localhost:9090
 

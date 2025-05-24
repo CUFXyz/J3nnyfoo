@@ -41,6 +41,8 @@ paths:
           description: Bad Request
         "404":
           description: Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Returns whole data what stored in PostgreSQL
   /dbstatus:
     get:
@@ -58,7 +60,31 @@ paths:
             $ref: '#/definitions/models.Status'
         "404":
           description: Not Found
+      security:
+      - ApiKeyAuth: []
       summary: Status of PostgreSQL
+  /delete:
+    post:
+      consumes:
+      - application/json
+      description: Sending JSON to service and deleting in PostgreSQL
+      parameters:
+      - description: Actual data to store in db
+        in: body
+        name: name
+        required: true
+        schema:
+          $ref: '#/definitions/models.JsonPlaceholder'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Removing data to PostgreSQL
   /login:
     post:
       consumes:

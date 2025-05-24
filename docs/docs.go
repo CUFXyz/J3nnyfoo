@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/data": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Returns an array of JSONS with data",
                 "produces": [
                     "application/json"
@@ -37,6 +42,11 @@ const docTemplate = `{
         },
         "/dbstatus": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Returns status of PostgreSQL in json",
                 "produces": [
                     "application/json"
@@ -54,6 +64,42 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Status"
                         }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/delete": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Sending JSON to service and deleting in PostgreSQL",
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Removing data to PostgreSQL",
+                "parameters": [
+                    {
+                        "description": "Actual data to store in db",
+                        "name": "name",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.JsonPlaceholder"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
                     },
                     "404": {
                         "description": "Not Found"
