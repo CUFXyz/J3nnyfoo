@@ -2,15 +2,24 @@ package auth
 
 import (
 	"fmt"
+	"jennyfood/internal/config"
+	"jennyfood/internal/storage"
 	"jennyfood/models"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func AuthFunc(hashedPass []byte, origPass []byte) error {
+type AuthInstance struct {
+	AuthCfg config.AuthConfig
+	Cache   *storage.Cache
+	Pgdb    *sqlx.DB
+}
+
+// Dehashing password and comparing them to pass user or not
+func (ai *AuthInstance) AuthFunc(hashedPass []byte, origPass []byte) error {
 	if err := bcrypt.CompareHashAndPassword(hashedPass, origPass); err != nil {
 		return err
 	}
@@ -18,7 +27,8 @@ func AuthFunc(hashedPass []byte, origPass []byte) error {
 	return nil
 }
 
-func CryptPassword(password string) []byte {
+// Hashing password for some sort of security
+func (ai *AuthInstance) CryptPassword(password string) []byte {
 	cryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		fmt.Printf("Error due crypting password, returning noncrypted")
@@ -27,16 +37,17 @@ func CryptPassword(password string) []byte {
 	return cryptedPassword
 }
 
-func GenerateToken(us models.RegisterData) string {
+// Generating token/cookie for user
+func (ai *AuthInstance) GenerateToken(us models.RegisterData) string {
 	payload := jwt.MapClaims{
 		"sub": us.Email,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	signed, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	signed, err := token.SignedString([]byte(ai.AuthCfg.Secret))
 	if err != nil {
 		fmt.Printf("Error due signing string")
 		return ""
 	}
-	return signed
+	return fmt.Sprintf("token=%v", signed)
 }
